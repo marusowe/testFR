@@ -4,6 +4,7 @@ from rest_framework.test import APITestCase
 from django.contrib.auth.models import User
 from polls_api.models import Polls
 from polls_api.models import Questions
+from polls_api.models import AnswerOptions
 
 
 class PollsAPITestCase(APITestCase):
@@ -72,3 +73,69 @@ class PollsAPITestCase(APITestCase):
         url = reverse('delete_question', kwargs={'poll_pk': poll.pk, 'question_number': question.number})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_create_answer_options(self):
+        poll = Polls.objects.create(**self.test_poll)
+        question = Questions.objects.create(poll=poll, **self.test_question)
+        url = reverse('create_answer', kwargs={'poll_pk': poll.pk, 'question_number': question.number})
+        data = {
+            'title': 'answer'
+        }
+        response = self.client.post(url, format='json', data=data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['title'], data['title'])
+
+    def test_update_answer_options(self):
+        poll = Polls.objects.create(**self.test_poll)
+        question = Questions.objects.create(poll=poll, **self.test_question)
+        answer = AnswerOptions.objects.create(question=question, title='answer')
+        url = reverse('update_answer', kwargs={'poll_pk': poll.pk,
+                                               'question_number': question.number,
+                                               'answer_number': answer.number})
+        data_updated = {
+            'title': 'answer_updated'
+        }
+        response = self.client.put(url, format='json', data=data_updated)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['title'], data_updated['title'])
+
+    def test_delete_answer_options(self):
+        poll = Polls.objects.create(**self.test_poll)
+        question = Questions.objects.create(poll=poll, **self.test_question)
+        answer = AnswerOptions.objects.create(question=question, title='answer')
+        url = reverse('delete_answer', kwargs={'poll_pk': poll.pk,
+                                               'question_number': question.number,
+                                               'answer_number': answer.number})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+class PollsUserAPITestCase(APITestCase):
+
+    def setUp(self):
+        self.test_poll = {
+            'title': 'test',
+            'date_start': '2021-05-15',
+            'date_end': '2021-05-21',
+            'description': 'test_description',
+        }
+        self.test_question = {
+            'title': 'test',
+            'type': 'text'
+        }
+        User.objects.create(
+            username='kk',
+            email='k@k.ru',
+            password='123',
+            is_active=True
+        )
+
+    def test_all_polls(self):
+        url = reverse('all_polls')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_polls(self):
+        poll = Polls.objects.create(**self.test_poll)
+        url = reverse('get_polls', kwargs={'pk': poll.pk})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

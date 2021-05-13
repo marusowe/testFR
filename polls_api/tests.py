@@ -118,16 +118,6 @@ class PollsUserAPITestCase(APITestCase):
             'date_end': '2021-05-21',
             'description': 'test_description',
         }
-        self.test_question = {
-            'title': 'test',
-            'type': 'text'
-        }
-        User.objects.create(
-            username='kk',
-            email='k@k.ru',
-            password='123',
-            is_active=True
-        )
 
     def test_all_polls(self):
         url = reverse('all_polls')
@@ -139,3 +129,23 @@ class PollsUserAPITestCase(APITestCase):
         url = reverse('get_polls', kwargs={'pk': poll.pk})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_answer_polls(self):
+        test_question = {
+            'title': 'test',
+            'type': 'text'
+        }
+
+        poll = Polls.objects.create(**self.test_poll)
+        question = Questions.objects.create(poll=poll, **test_question)
+        AnswerOptions.objects.create(question=question, title='answer')
+        url = reverse('reply_polls', kwargs={'poll_pk': poll.pk,
+                                             'question_number': question.number,
+                                             'reply_type': test_question['type']})
+        data = {'answer': 'test answer'}
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['answer'], data['answer'])
+        url = reverse('passed_polls', kwargs={'user_id': response.data['user']})
+        response = self.client.get(url)
+        self.assertEqual(response.data[0]['question'], question.title)

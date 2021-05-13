@@ -37,5 +37,7 @@
     `pip install -r requirements.txt`
 5. Выполнить миграции  
     `python manage.py migrate`
-6. Запустить приложение  
+6. Создать суперпользователя для авторизованных запросов  
+    `python manage.py createsuperuser`
+7. Запустить приложение  
     `python manage.py runserver`

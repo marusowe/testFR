@@ -4,7 +4,6 @@ from rest_framework.test import APITestCase
 from django.contrib.auth.models import User
 from polls_api.models import Polls
 from polls_api.models import Questions
-from polls_api.models import Answers
 
 
 class PollsAPITestCase(APITestCase):
@@ -26,7 +25,6 @@ class PollsAPITestCase(APITestCase):
             password='123',
             is_active=True
         )
-        #исправить и пубрать из сетапа и апдейт пула
         poll = Polls.objects.create(**self.test_poll)
         self.poll_pk = poll.pk
         user = User.objects.get(username='kk')
@@ -74,38 +72,3 @@ class PollsAPITestCase(APITestCase):
         url = reverse('delete_question', kwargs={'poll_pk': poll.pk, 'question_number': question.number})
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-
-
-class PollsUserTestCase(APITestCase):
-    def setUp(self):
-        #todo выводить активные пулы везде (в тесте просто тудушка)
-        #и варианты ответа доделать
-        self.test_poll = {
-            'title': 'test',
-            'date_start': '2021-05-15',
-            'date_end': '2021-05-21',
-            'description': 'test_description',
-        }
-        #todo сделать под каждый тип
-        self.test_question = {
-            'title': 'test',
-            'type': 'text'
-        }
-        self.reply = {
-            'answer_text': 'answer'
-        }
-        self.poll = Polls.objects.create(**self.test_poll)
-        self.question = Questions.objects.create(poll=self.poll, **self.test_question)
-
-    def test_user_reply(self):
-        url = reverse('reply_polls', kwargs={'poll_pk': self.poll.pk, 'question_number': self.question.number})
-        response = self.client.post(url, format='json', data=self.reply)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['answer_text'], self.reply['answer_text'])
-
-    def test_user_passe_polls(self):
-        Answers.objects.create(user=1, poll=self.poll, question=self.question, **self.reply)
-        url = reverse('passed_polls', kwargs={'id': 1})
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn(self.poll.title, response.data)

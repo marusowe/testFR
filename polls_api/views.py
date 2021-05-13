@@ -42,7 +42,6 @@ def get_answers(user_id):
         raise Http404
 
 
-# todo гавно переделать
 def generate_id():
     try:
         max_id_answer = Answers.objects.latest('user')

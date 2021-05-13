@@ -35,7 +35,6 @@ class QuestionsSerializer(serializers.ModelSerializer):
 
     def validate_number(self, number):
         if Questions.objects.filter(number=number).exists():
-            #todo ввыести номально ошибку
             raise serializers.ValidationError('Number exists')
         return number
 

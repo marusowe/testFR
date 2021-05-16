@@ -35,7 +35,8 @@ class PollsAPITestCase(APITestCase):
         url = reverse('create_polls')
         response = self.client.post(url, format='json', data=self.test_poll)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data, self.test_poll)
+        self.assertEqual(response.data['title'], self.test_poll['title'])
+        self.assertEqual(response.data['date_start'], self.test_poll['date_start'])
 
     def test_update_poll(self):
         url = reverse('update_polls', kwargs={'poll_pk': self.poll_pk})
@@ -126,7 +127,7 @@ class PollsUserAPITestCase(APITestCase):
 
     def test_get_polls(self):
         poll = Polls.objects.create(**self.test_poll)
-        url = reverse('get_polls', kwargs={'pk': poll.pk})
+        url = reverse('get_polls', kwargs={'poll_pk': poll.pk})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 

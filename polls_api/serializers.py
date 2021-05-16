@@ -1,19 +1,23 @@
 from rest_framework import serializers
-from polls_api.models import Polls
-from polls_api.models import Questions
+
 from polls_api.models import AnswerOptions
 from polls_api.models import Answers
+from polls_api.models import Polls
+from polls_api.models import Questions
 from testFR import settings
 
 
 class AnswerOptionsSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = AnswerOptions
         fields = ['number', 'title']
         extra_kwargs = {
             'number': {'read_only': True},
         }
+
+    def create(self, validated_data):
+        question = self.context['question']
+        return AnswerOptions.objects.create(**validated_data, question=question)
 
 
 class QuestionsSerializer(serializers.ModelSerializer):
@@ -24,7 +28,12 @@ class QuestionsSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'number', 'type', 'answer_options']
         extra_kwargs = {
             'number': {'read_only': True},
+            'poll': {'read_only': True},
         }
+
+    def create(self, validated_data):
+        poll = self.context['poll']
+        return Questions.objects.create(**validated_data, poll=poll)
 
     def update(self, instance, validated_data):
         instance.title = validated_data.get('title', instance.title)
@@ -35,17 +44,16 @@ class QuestionsSerializer(serializers.ModelSerializer):
 
     def validate_number(self, number):
         if Questions.objects.filter(number=number).exists():
-            raise serializers.ValidationError('Number exists')
+            raise serializers.ValidationError(dict(message='Number exists', status='error'))
         return number
 
 
-class QuestionsUpdateSerializer(QuestionsSerializer):
+class PollsCreateSerializer(serializers.ModelSerializer):
+    questions = QuestionsSerializer(many=True, required=False)
+
     class Meta:
-        model = Questions
-        fields = ['id', 'title', 'type', 'answer_options']
-        extra_kwargs = {
-            'start_date': {'read_only': True},
-        }
+        model = Polls
+        fields = '__all__'
 
 
 class PollsSerializer(serializers.ModelSerializer):
@@ -53,10 +61,7 @@ class PollsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Polls
-        fields = ['id', 'title', 'date_start', 'date_end', 'description', 'questions']
-
-    def create(self, validated_data):
-        return Polls.objects.create(**validated_data)
+        fields = ['id', 'title', 'date_end', 'description', 'questions']
 
     def update(self, instance, validated_data):
         instance.title = validated_data.get('title', instance.title)
@@ -67,8 +72,8 @@ class PollsSerializer(serializers.ModelSerializer):
 
 
 class AnswersSerializer(serializers.ModelSerializer):
-    answer_poll = PollsSerializer(many=True, required=False)
-    question_poll = QuestionsSerializer(many=True, required=False)
+    poll = serializers.StringRelatedField()
+    question = serializers.StringRelatedField()
 
     class Meta:
         model = Answers
@@ -105,4 +110,3 @@ class AnswersSerializer(serializers.ModelSerializer):
 
         self.instance = self.create(validated_data)
         return self.instance
-
